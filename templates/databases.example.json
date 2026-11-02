@@ -1,0 +1,54 @@
+{
+  "defaults": {
+    "maxRows": 200,
+    "timeoutSec": 30,
+    "maxChars": 40000
+  },
+  "maskColumns": ["salary", "account_no"],
+  "databases": [
+    {
+      "id": "local_mysql",
+      "driver": "mysql",
+      "env": "local",
+      "access": ["read", "insert", "update", "delete", "ddl"],
+      "description": "Laravel application database for development",
+      "url": "${LOCAL_MYSQL_URL}"
+    },
+    {
+      "id": "staging_pg",
+      "driver": "postgres",
+      "env": "staging",
+      "access": ["read"],
+      "description": "PostgreSQL staging for testing features before a release",
+      "url": "postgres://app_staging:${STAGING_PG_PASSWORD}@pg.staging.internal:5432/app",
+      "schemas": ["public"]
+    },
+    {
+      "id": "prod_pg",
+      "driver": "postgres",
+      "env": "production",
+      "access": ["read", "update"],
+      "description": "PostgreSQL production; may fix data (UPDATE), may not add or delete rows",
+      "url": "${PROD_PG_URL}",
+      "schemas": ["public"]
+    },
+    {
+      "id": "prod_db2",
+      "driver": "db2",
+      "env": "production",
+      "access": ["read"],
+      "description": "Core transaction data, for reports only",
+      "url": "${PROD_DB2_CONN}",
+      "maxRows": 500,
+      "schemas": ["CORE", "REPORT"]
+    },
+    {
+      "id": "prod_redis",
+      "driver": "redis",
+      "env": "production",
+      "access": ["read", "delete"],
+      "description": "Redis production (Laravel cache & sessions); may delete broken cache entries",
+      "url": "${PROD_REDIS_URL}"
+    }
+  ]
+}

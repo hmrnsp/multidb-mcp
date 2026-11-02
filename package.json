@@ -1,0 +1,84 @@
+{
+  "name": "multidb-mcp",
+  "version": "0.9.0",
+  "private": true,
+  "description": "MCP server that gives Claude Code guarded access to PostgreSQL, MySQL/MariaDB, IBM Db2, SQLite, and Redis",
+  "license": "MIT",
+  "author": "Rede",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "claude-code",
+    "database",
+    "postgresql",
+    "mysql",
+    "mariadb",
+    "db2",
+    "sqlite",
+    "redis",
+    "sql-guard"
+  ],
+  "homepage": "https://github.com/hmrnsp/multidb-mcp#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hmrnsp/multidb-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hmrnsp/multidb-mcp/issues"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/index.js --config databases.dev.json --dotenv .env",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:protocol": "npm run build && vitest run --config vitest.protocol.config.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:db2": "vitest run --config vitest.db2.config.ts --configLoader runner",
+    "inspect": "npx @modelcontextprotocol/inspector node dist/index.js --config databases.dev.json --dotenv .env",
+    "check:env": "node scripts/check-env.mjs",
+    "db:up": "docker compose up -d postgres mysql mariadb redis",
+    "db:up:db2": "docker compose --profile db2 up -d db2",
+    "db:down": "docker compose --profile db2 down",
+    "db:logs:db2": "docker compose --profile db2 logs -f db2",
+    "seed:db2": "node scripts/seed-db2.mjs",
+    "seed:sqlite": "node scripts/seed-sqlite.mjs",
+    "seed:redis": "node scripts/seed-redis.mjs",
+    "check:db2": "node scripts/db2-check.mjs --target local",
+    "check:db2:dev": "node scripts/db2-check.mjs --target dev",
+    "docker:build": "docker build --target runtime -t multidb-mcp:$npm_package_version -t multidb-mcp:latest .",
+    "docker:build:dev": "docker build --target dev -t multidb-mcp-dev .",
+    "docker:dev": "node scripts/docker-dev.mjs",
+    "audit:prod": "npm audit --omit=dev"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.0.0",
+    "@redis/client": "^6.3.0",
+    "ibm_db": "^4.0.1",
+    "mysql2": "^3.11.0",
+    "pg": "^8.13.0",
+    "pg-cursor": "^2.12.0",
+    "zod": "^4.2.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@modelcontextprotocol/client": "^2.0.0",
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.11.0",
+    "eslint": "^9.0.0",
+    "globals": "^16.0.0",
+    "prettier": "^3.6.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.63.0",
+    "vitest": "^4.0.0"
+  },
+  "allowScripts": {
+    "ibm_db@4.1.0": true
+  }
+}

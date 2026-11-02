@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__multidb__list_databases",
+      "mcp__multidb__list_tables",
+      "mcp__multidb__describe_table"
+    ],
+    "ask": ["mcp__multidb__execute_sql", "mcp__multidb__redis_command"]
+  }
+}

@@ -1,0 +1,123 @@
+# Development databases for multidb-mcp.
+#
+#   npm run db:up       -> PostgreSQL, MySQL, MariaDB, Redis
+#   npm run db:up:db2   -> Db2 Community Edition (heavy: a multi-GB image, the first start takes 5-10 minutes)
+#   npm run db:down     -> stop everything (Db2 data stays in the db2data volume)
+#
+# Every port is bound to 127.0.0.1 only and uses a non-default port so it does not clash
+# with databases already on your machine. The credentials here are for DEVELOPMENT ONLY.
+name: multidb-mcp-dev
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: dev
+      POSTGRES_DB: app
+    ports:
+      - '127.0.0.1:55432:5432'
+    volumes:
+      - ./docker/seed/postgres.sql:/docker-entrypoint-initdb.d/01-seed.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U dev -d app']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: root-dev
+      MYSQL_DATABASE: app
+      MYSQL_USER: dev
+      MYSQL_PASSWORD: dev
+    ports:
+      - '127.0.0.1:53306:3306'
+    volumes:
+      - ./docker/seed/mysql.sql:/docker-entrypoint-initdb.d/01-seed.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -uroot -proot-dev --silent']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  mariadb:
+    image: mariadb:11.4
+    environment:
+      MARIADB_ROOT_PASSWORD: root-dev
+      MARIADB_DATABASE: app
+      MARIADB_USER: dev
+      MARIADB_PASSWORD: dev
+    ports:
+      - '127.0.0.1:53307:3306'
+    volumes:
+      - ./docker/seed/mysql.sql:/docker-entrypoint-initdb.d/01-seed.sql:ro
+    healthcheck:
+      test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  # Redis for cache/session/queues. Data is not saved to disk; refill it with: npm run seed:redis
+  # The mcp_ro user may only read (the minimal-privilege model recommended for MCP).
+  redis:
+    image: redis:7.4
+    command:
+      - redis-server
+      - --save
+      - ''
+      - --appendonly
+      - 'no'
+      # Every part of an ACL rule must be a separate argument (not one string with spaces).
+      - --user
+      - default
+      - 'on'
+      - '>dev'
+      - '~*'
+      - '&*'
+      - '+@all'
+      - --user
+      - mcp_ro
+      - 'on'
+      - '>mcp_ro'
+      - '~*'
+      - '&*'
+      - '+@read'
+      - '+@connection'
+      - '-@dangerous'
+    ports:
+      - '127.0.0.1:56379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', '--user', 'default', '--pass', 'dev', '--no-auth-warning', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  # Db2 LUW Community Edition. Needs privileged mode and at least 4 GB of Docker RAM.
+  # This image does not run seed scripts automatically; load the data with: npm run seed:db2
+  db2:
+    image: icr.io/db2_community/db2:latest
+    profiles: ['db2']
+    privileged: true
+    environment:
+      LICENSE: accept
+      DB2INSTANCE: db2inst1
+      DB2INST1_PASSWORD: db2dev-Passw0rd
+      DBNAME: APPDB
+      BLU: 'false'
+      ENABLE_ORACLE_COMPATIBILITY: 'false'
+      UPDATEAVAIL: 'NO'
+      TO_CREATE_SAMPLEDB: 'false'
+      REPODB: 'false'
+      IS_OSXFS: 'false'
+      PERSISTENT_HOME: 'true'
+      HADR_ENABLED: 'false'
+      ARCHIVE_LOGS: 'false'
+    ports:
+      - '127.0.0.1:55000:50000'
+    volumes:
+      - db2data:/database
+
+volumes:
+  db2data:

@@ -1,0 +1,29 @@
+{
+  "mcpServers": {
+    "multidb": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "--init",
+        "--pull=never",
+        "--network",
+        "host",
+        "-e",
+        "TZ=Europe/Berlin",
+        "-v",
+        "/home/USER/projects/aplikasi/databases.json:/work/databases.json:ro",
+        "-v",
+        "/home/USER/projects/aplikasi/.env.multidb:/work/.env.multidb:ro",
+        "-v",
+        "/home/USER/projects/aplikasi/.multidb:/work/.multidb",
+        "multidb-mcp:latest",
+        "--config",
+        "/work/databases.json",
+        "--dotenv",
+        "/work/.env.multidb"
+      ]
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "multidb": {
+      "command": "node",
+      "args": [
+        "/home/USER/Apps/TYPESCRIPT/multidb-mcp/dist/index.js",
+        "--config",
+        "databases.json",
+        "--dotenv",
+        ".env.multidb"
+      ]
+    }
+  }
+}

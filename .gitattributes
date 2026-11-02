@@ -1,0 +1,3 @@
+# Force LF so scripts, SQL seeds, and YAML are the same on Windows and Linux.
+* text=auto eol=lf
+*.png binary

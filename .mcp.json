@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "multidb": {
+      "command": "node",
+      "args": ["dist/index.js", "--config", "databases.dev.json", "--dotenv", ".env"]
+    }
+  }
+}

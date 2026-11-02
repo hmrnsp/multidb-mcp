@@ -1,0 +1,12 @@
+node_modules
+dist
+coverage
+.git
+.multidb
+.data
+*.log
+
+# Secrets never enter the image; the env file is mounted on docker run.
+.env
+.env.*
+!.env.example

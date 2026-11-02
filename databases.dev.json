@@ -1,0 +1,59 @@
+{
+  "defaults": {
+    "maxRows": 200,
+    "timeoutSec": 30,
+    "maxChars": 40000
+  },
+  "databases": [
+    {
+      "id": "local_pg",
+      "driver": "postgres",
+      "env": "local",
+      "access": ["read", "insert", "update", "delete", "ddl", "call"],
+      "description": "PostgreSQL 17 in Docker for developing multidb-mcp (sample data app.customers & app.orders)",
+      "url": "${PG_LOCAL_URL}",
+      "schemas": ["app"]
+    },
+    {
+      "id": "local_mysql",
+      "driver": "mysql",
+      "env": "local",
+      "access": ["read", "insert", "update", "delete", "ddl", "call"],
+      "description": "MySQL 8.4 in Docker for developing multidb-mcp (sample data customers & orders)",
+      "url": "${MYSQL_LOCAL_URL}"
+    },
+    {
+      "id": "local_mariadb",
+      "driver": "mariadb",
+      "env": "local",
+      "access": ["read", "insert", "update", "delete", "ddl", "call"],
+      "description": "MariaDB 11.4 in Docker for developing multidb-mcp (sample data customers & orders)",
+      "url": "${MARIADB_LOCAL_URL}"
+    },
+    {
+      "id": "local_db2",
+      "driver": "db2",
+      "env": "local",
+      "access": ["read", "insert", "update", "delete", "ddl", "call"],
+      "description": "Db2 Community Edition in Docker for developing multidb-mcp (schema APP)",
+      "url": "${DB2_LOCAL_CONN}",
+      "schemas": ["APP"]
+    },
+    {
+      "id": "local_sqlite",
+      "driver": "sqlite",
+      "env": "local",
+      "access": ["read", "insert", "update", "delete", "ddl"],
+      "description": "Local SQLite file for developing multidb-mcp (sample data customers & orders, npm run seed:sqlite)",
+      "url": "sqlite:./.data/app.sqlite"
+    },
+    {
+      "id": "local_redis",
+      "driver": "redis",
+      "env": "local",
+      "access": ["read", "insert", "update", "delete"],
+      "description": "Redis 7.4 in Docker for developing multidb-mcp (sample cache, sessions, queues; npm run seed:redis)",
+      "url": "${REDIS_LOCAL_URL}"
+    }
+  ]
+}

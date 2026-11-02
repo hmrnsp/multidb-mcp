@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  # IBM's own download server is very slow; use the mirror on GitHub (version pinned like the Dockerfile).
+  IBM_DB_INSTALLER_URL: https://github.com/ibmdb/db2drivers/raw/main/clidriver/v12.1.4
+
+jobs:
+  check:
+    name: Typecheck, lint, unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npx prettier --check .
+      - run: npm test
+      - run: npm run audit:prod
+
+  integration:
+    name: Integration and protocol tests
+    runs-on: ubuntu-latest
+    needs: check
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: cp .env.example .env
+      - run: npm run db:up
+      - name: Wait for the databases
+        run: |
+          for i in $(seq 1 60); do
+            if [ "$(docker compose ps --format '{{.Status}}' | grep -vc healthy)" = "0" ]; then exit 0; fi
+            sleep 3
+          done
+          docker compose ps
+          exit 1
+      - run: npm run seed:sqlite
+      - run: npm run seed:redis
+      - run: npm run test:integration
+      - run: npm run test:protocol
+      - if: always()
+        run: npm run db:down

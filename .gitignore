@@ -1,0 +1,18 @@
+node_modules/
+dist/
+coverage/
+
+# Secrets: never commit
+.env
+.env.*
+!.env.example
+
+# Audit logs
+.multidb/
+
+*.log
+.DS_Store
+Thumbs.db
+
+# Database SQLite development (npm run seed:sqlite)
+.data/
