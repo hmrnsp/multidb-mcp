@@ -15,6 +15,7 @@ All notable changes to this project are documented here. The format is based on
   connection URL, and control characters are refused in every field.
 - A test that loads `databases.dev.json` and opens every development connection.
 - `templates/env.multidb.example`, the env file that goes with `templates/databases.example.json`.
+- `npm run check:env` also checks the Redis port.
 
 ### Removed
 

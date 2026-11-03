@@ -124,10 +124,10 @@ await check.step('File .env', () => {
     .map((line) => /^\s*([A-Z0-9_]+)\s*=\s*(.*)$/.exec(line))
     .filter((m) => m && m[2].trim() !== '')
     .map((m) => m[1]);
-  return { variabelTerisi: filled };
+  return { filledVariables: filled };
 });
 
-const ports = { postgres: 55432, mysql: 53306, mariadb: 53307, db2: 55000 };
+const ports = { postgres: 55432, mysql: 53306, mariadb: 53307, db2: 55000, redis: 56379 };
 const states = {};
 for (const [name, port] of Object.entries(ports)) states[`${name}:${port}`] = await portState(port);
 check.info(
