@@ -13,6 +13,7 @@ import {
 const env = {
   LOCAL_MYSQL_URL: 'mysql://dev:dev@127.0.0.1:53306/app',
   PROD_DB2_CONN: 'DATABASE=APPDB;HOSTNAME=db2.internal;PORT=50000;UID=mcp_ro;PWD=Hunter!;',
+  DEV_PG_URL: 'postgres://dev:dev@127.0.0.1/app',
 };
 
 const validConfig = {
@@ -65,7 +66,7 @@ const base = {
   env: 'local',
   access: ['read'],
   description: 'sample description',
-  url: 'postgres://dev:dev@127.0.0.1/app',
+  url: '${DEV_PG_URL}',
 };
 
 describe('parseConfig: config valid', () => {
@@ -201,16 +202,15 @@ describe('parseConfig: rejected configs', () => {
     }
   });
 
-  it('a literal password on staging/production, but allowed on local', () => {
+  it('a literal password is rejected in every env, local included', () => {
     const literal = 'postgres://ro:hunter@db.internal/app';
-    for (const environment of ['staging', 'production']) {
+    for (const environment of ['local', 'staging', 'production']) {
       const err = configError(() =>
         parse(withDatabases({ ...base, env: environment, url: literal })),
       );
       expect(err.problems.join('\n')).toMatch(/password is written directly/);
       expect(err.message).not.toContain('hunter');
     }
-    expect(parse(withDatabases({ ...base, env: 'local', url: literal })).sources).toHaveLength(1);
   });
 
   it('missing environment variables are all reported at once', () => {

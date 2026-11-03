@@ -12,7 +12,11 @@
       "env": "local",
       "access": ["read", "insert", "update", "delete", "ddl"],
       "description": "Laravel application database for development",
-      "url": "${LOCAL_MYSQL_URL}"
+      "host": "127.0.0.1",
+      "port": 3306,
+      "database": "app",
+      "user": "dev",
+      "password": "${LOCAL_MYSQL_PASSWORD}"
     },
     {
       "id": "staging_pg",
@@ -20,7 +24,11 @@
       "env": "staging",
       "access": ["read"],
       "description": "PostgreSQL staging for testing features before a release",
-      "url": "postgres://app_staging:${STAGING_PG_PASSWORD}@pg.staging.internal:5432/app",
+      "host": "pg.staging.example.internal",
+      "port": 5432,
+      "database": "app",
+      "user": "app_staging",
+      "password": "${STAGING_PG_PASSWORD}",
       "schemas": ["public"]
     },
     {
@@ -29,7 +37,11 @@
       "env": "production",
       "access": ["read", "update"],
       "description": "PostgreSQL production; may fix data (UPDATE), may not add or delete rows",
-      "url": "${PROD_PG_URL}",
+      "host": "pg.example.internal",
+      "port": 5432,
+      "database": "app",
+      "user": "mcp_app",
+      "password": "${PROD_PG_PASSWORD}",
       "schemas": ["public"]
     },
     {
@@ -38,7 +50,11 @@
       "env": "production",
       "access": ["read"],
       "description": "Core transaction data, for reports only",
-      "url": "${PROD_DB2_CONN}",
+      "host": "db2.example.internal",
+      "port": 50000,
+      "database": "APPDB",
+      "user": "mcp_ro",
+      "password": "${PROD_DB2_PASSWORD}",
       "maxRows": 500,
       "schemas": ["CORE", "REPORT"]
     },
@@ -48,7 +64,10 @@
       "env": "production",
       "access": ["read", "delete"],
       "description": "Redis production (Laravel cache & sessions); may delete broken cache entries",
-      "url": "${PROD_REDIS_URL}"
+      "host": "redis.example.internal",
+      "user": "mcp_ops",
+      "password": "${PROD_REDIS_PASSWORD}",
+      "database": 0
     }
   ]
 }

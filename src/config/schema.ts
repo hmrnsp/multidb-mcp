@@ -44,7 +44,27 @@ export const SourceSchema = z.strictObject({
   driver: z.enum(DRIVERS),
   env: z.enum(ENVIRONMENTS),
   description: z.string().trim().min(5, 'at least 5 characters').max(300, 'at most 300 characters'),
-  url: z.string().trim().min(1, 'must not be empty'),
+  /** Whole connection string. Alternative to the separate fields below. */
+  url: z.string().trim().min(1, 'must not be empty').optional(),
+  /** Separate connection fields, an alternative to `url`. Text fields may use ${VAR}. */
+  host: z.string().trim().min(1, 'must not be empty').max(253, 'at most 253 characters').optional(),
+  port: z.int().min(1).max(65_535).optional(),
+  /** Database name (a number for Redis). */
+  database: z
+    .union([
+      z.string().trim().min(1, 'must not be empty').max(128, 'at most 128 characters'),
+      z.int().min(0),
+    ])
+    .optional(),
+  user: z.string().trim().min(1, 'must not be empty').max(128, 'at most 128 characters').optional(),
+  password: z.string().min(1, 'must not be empty').max(1024, 'at most 1024 characters').optional(),
+  /** Path of the database file (SQLite only). */
+  file: z
+    .string()
+    .trim()
+    .min(1, 'must not be empty')
+    .max(1024, 'at most 1024 characters')
+    .optional(),
   access: z
     .array(
       z.enum(ACCESS_LEVELS, {
@@ -107,6 +127,55 @@ export const ConfigFileSchema = z
           path: ['databases', index, 'id'],
           message: `id "${source.id}" is already used by databases[${first}]`,
         });
+      }
+      const separate = (['host', 'port', 'database', 'user', 'password', 'file'] as const).filter(
+        (field) => source[field] !== undefined,
+      );
+      if (source.url !== undefined && separate.length > 0) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['databases', index, 'url'],
+          message: `give either url or separate fields, not both (also found: ${separate.join(', ')})`,
+        });
+      } else if (source.url === undefined && source.driver === 'sqlite') {
+        if (source.file === undefined) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['databases', index, 'file'],
+            message: 'required for sqlite when url is not given, e.g. "./app.sqlite"',
+          });
+        }
+        for (const field of separate.filter((f) => f !== 'file')) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['databases', index, field],
+            message: `not used for sqlite; use "file"`,
+          });
+        }
+      } else if (source.url === undefined) {
+        if (source.host === undefined) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['databases', index, 'host'],
+            message: 'required when url is not given',
+          });
+        }
+        if (source.file !== undefined) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['databases', index, 'file'],
+            message: 'only used for sqlite',
+          });
+        }
+        if (source.driver === 'redis' && typeof source.database === 'string') {
+          if (!/^\d+$/.test(source.database) && !source.database.includes('${')) {
+            ctx.addIssue({
+              code: 'custom',
+              path: ['databases', index, 'database'],
+              message: 'for redis this is the database number, e.g. 0',
+            });
+          }
+        }
       }
       if (source.driver === 'sqlite' && source.schemas) {
         ctx.addIssue({

@@ -4,6 +4,23 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows
 [Semantic Versioning](https://semver.org/) (pre-1.0: minor versions may contain breaking changes).
 
+## [Unreleased]
+
+### Added
+
+- Connections can be written with separate `host`, `port`, `database`, `user`, and `password` fields (and
+  `file` for SQLite) instead of one `url`. Only the password needs to be in the env file, and it is
+  URL-encoded automatically. `url` is still supported.
+- With separate fields, `host` is validated (a host name or an IP address) so it cannot change the meaning of the
+  connection URL, and control characters are refused in every field.
+- A test that loads `databases.dev.json` and opens every development connection.
+
+### Changed
+
+- **Breaking:** a password written directly in the config is now rejected in **every** env (it used to be allowed
+  for `env: local`), and also inside `url`. Use a `${VAR}` reference and keep the value in the env file.
+- The development config (`databases.dev.json`, `.env.example`) uses separate fields; only passwords are in `.env`.
+
 ## [0.9.0] - 2026-11-02
 
 ### Added

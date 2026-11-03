@@ -11,7 +11,11 @@
       "env": "local",
       "access": ["read", "insert", "update", "delete", "ddl", "call"],
       "description": "PostgreSQL 17 in Docker for developing multidb-mcp (sample data app.customers & app.orders)",
-      "url": "${PG_LOCAL_URL}",
+      "host": "127.0.0.1",
+      "port": 55432,
+      "database": "app",
+      "user": "dev",
+      "password": "${PG_LOCAL_PASSWORD}",
       "schemas": ["app"]
     },
     {
@@ -20,7 +24,11 @@
       "env": "local",
       "access": ["read", "insert", "update", "delete", "ddl", "call"],
       "description": "MySQL 8.4 in Docker for developing multidb-mcp (sample data customers & orders)",
-      "url": "${MYSQL_LOCAL_URL}"
+      "host": "127.0.0.1",
+      "port": 53306,
+      "database": "app",
+      "user": "dev",
+      "password": "${MYSQL_LOCAL_PASSWORD}"
     },
     {
       "id": "local_mariadb",
@@ -28,7 +36,11 @@
       "env": "local",
       "access": ["read", "insert", "update", "delete", "ddl", "call"],
       "description": "MariaDB 11.4 in Docker for developing multidb-mcp (sample data customers & orders)",
-      "url": "${MARIADB_LOCAL_URL}"
+      "host": "127.0.0.1",
+      "port": 53307,
+      "database": "app",
+      "user": "dev",
+      "password": "${MARIADB_LOCAL_PASSWORD}"
     },
     {
       "id": "local_db2",
@@ -36,7 +48,11 @@
       "env": "local",
       "access": ["read", "insert", "update", "delete", "ddl", "call"],
       "description": "Db2 Community Edition in Docker for developing multidb-mcp (schema APP)",
-      "url": "${DB2_LOCAL_CONN}",
+      "host": "127.0.0.1",
+      "port": 55000,
+      "database": "APPDB",
+      "user": "db2inst1",
+      "password": "${DB2_LOCAL_PASSWORD}",
       "schemas": ["APP"]
     },
     {
@@ -45,7 +61,7 @@
       "env": "local",
       "access": ["read", "insert", "update", "delete", "ddl"],
       "description": "Local SQLite file for developing multidb-mcp (sample data customers & orders, npm run seed:sqlite)",
-      "url": "sqlite:./.data/app.sqlite"
+      "file": "./.data/app.sqlite"
     },
     {
       "id": "local_redis",
@@ -53,7 +69,11 @@
       "env": "local",
       "access": ["read", "insert", "update", "delete"],
       "description": "Redis 7.4 in Docker for developing multidb-mcp (sample cache, sessions, queues; npm run seed:redis)",
-      "url": "${REDIS_LOCAL_URL}"
+      "host": "127.0.0.1",
+      "port": 56379,
+      "user": "default",
+      "password": "${REDIS_LOCAL_PASSWORD}",
+      "database": 0
     }
   ]
 }

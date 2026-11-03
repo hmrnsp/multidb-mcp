@@ -258,7 +258,11 @@ describe('no credentials in the log, the audit log, or tool results', () => {
               env: 'staging',
               access: ['read'],
               description: 'leak test mysql',
-              url: '${TEST_MYSQL_URL}',
+              host: '127.0.0.1',
+              port: 1,
+              database: 'app',
+              user: 'dev',
+              password: '${TEST_MYSQL_PASSWORD}',
             },
             {
               id: 'test_db2',
@@ -295,7 +299,7 @@ describe('no credentials in the log, the audit log, or tool results', () => {
         env: {
           ...getDefaultEnvironment(),
           ...SERVER_ENV,
-          TEST_MYSQL_URL: `mysql://dev:${SECRET}@127.0.0.1:1/app`,
+          TEST_MYSQL_PASSWORD: SECRET,
           TEST_REDIS_URL: `redis://default:${SECRET}@127.0.0.1:1/0`,
         },
         stderr: 'pipe',

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import type * as z from 'zod/v4';
-import { hasLiteralSecret, interpolate } from './env.js';
+import { buildConnection } from './connection.js';
 import {
   ACCESS_LEVELS,
   ConfigFileSchema,
@@ -125,28 +125,18 @@ export function parseConfig(
   config.databases.forEach((entry, index) => {
     const where = `databases[${index}] (${entry.id})`;
 
-    if (entry.env !== 'local' && hasLiteralSecret(entry.url)) {
-      problems.push(
-        `${where}: password is written directly in url. For env ${entry.env}, use \${VAR} and keep the value in .env`,
-      );
+    const built = buildConnection(entry, options.env, where);
+    if (built.problems) {
+      problems.push(...built.problems);
       return;
     }
-
-    const result = interpolate(entry.url, options.env);
-    if (result.malformed) {
-      problems.push(`${where}: invalid \${...} pattern in url. Use \${VARIABLE_NAME}`);
-    }
-    if (result.missing.length > 0) {
-      problems.push(`${where}: environment variable is not set: ${result.missing.join(', ')}`);
-    }
-    if (result.malformed || result.missing.length > 0) return;
 
     sources.push({
       id: entry.id,
       driver: entry.driver,
       env: entry.env,
       description: entry.description,
-      connection: new Secret(result.value),
+      connection: new Secret(built.value),
       access: ACCESS_LEVELS.filter((level) => entry.access.includes(level)),
       readonly: entry.access.every((level) => level === 'read'),
       limits: {

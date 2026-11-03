@@ -129,7 +129,11 @@ A project needs three files:
       "env": "local",
       "access": ["read", "insert", "update", "delete", "ddl"],
       "description": "Laravel application database for development",
-      "url": "${LOCAL_MYSQL_URL}"
+      "host": "127.0.0.1",
+      "port": 3306,
+      "database": "app",
+      "user": "dev",
+      "password": "${LOCAL_MYSQL_PASSWORD}"
     },
     {
       "id": "prod_db2",
@@ -137,7 +141,10 @@ A project needs three files:
       "env": "production",
       "access": ["read"],
       "description": "Core transaction data, for reports only",
-      "url": "${PROD_DB2_CONN}",
+      "host": "db2.example.internal",
+      "database": "APPDB",
+      "user": "mcp_ro",
+      "password": "${PROD_DB2_PASSWORD}",
       "maxRows": 500,
       "schemas": ["CORE", "REPORT"]
     }
@@ -147,17 +154,19 @@ A project needs three files:
 
 Complete examples live in [`templates/`](templates).
 
-| Field                                 | Required | Default       | Meaning                                                                    |
-| ------------------------------------- | -------- | ------------- | -------------------------------------------------------------------------- |
-| `id`                                  | yes      |               | Unique id (lower-case letters, digits, `_`); becomes the `db` enum value   |
-| `driver`                              | yes      |               | `postgres`, `mysql`, `mariadb`, `db2`, `sqlite`, or `redis`                |
-| `env`                                 | yes      |               | `local`, `staging`, or `production`                                        |
-| `access`                              | yes      |               | Permissions, see [below](#permissions-access)                              |
-| `description`                         | yes      |               | What the connection is for; the model uses it to pick a connection         |
-| `url`                                 | yes      |               | Connection string; secrets must come from `${VAR}`                         |
-| `maxRows` / `timeoutSec` / `maxChars` | no       | from defaults | Limits for this connection                                                 |
-| `schemas`                             | no       | all           | Schema whitelist for list, describe, and queries (not for SQLite or Redis) |
-| `lazy`                                | no       | `true`        | Open the connection on first use                                           |
+| Field                                          | Required | Default              | Meaning                                                                    |
+| ---------------------------------------------- | -------- | -------------------- | -------------------------------------------------------------------------- |
+| `id`                                           | yes      |                      | Unique id (lower-case letters, digits, `_`); becomes the `db` enum value   |
+| `driver`                                       | yes      |                      | `postgres`, `mysql`, `mariadb`, `db2`, `sqlite`, or `redis`                |
+| `env`                                          | yes      |                      | `local`, `staging`, or `production`                                        |
+| `access`                                       | yes      |                      | Permissions, see [below](#permissions-access)                              |
+| `description`                                  | yes      |                      | What the connection is for; the model uses it to pick a connection         |
+| `url`                                          | one of   |                      | Whole connection string; secrets must come from `${VAR}`                   |
+| `host`, `port`, `database`, `user`, `password` | one of   | port: driver default | Separate fields, an alternative to `url` (see below)                       |
+| `file`                                         | sqlite   |                      | Path of the SQLite file, an alternative to `url`                           |
+| `maxRows` / `timeoutSec` / `maxChars`          | no       | from defaults        | Limits for this connection                                                 |
+| `schemas`                                      | no       | all                  | Schema whitelist for list, describe, and queries (not for SQLite or Redis) |
+| `lazy`                                         | no       | `true`               | Open the connection on first use                                           |
 
 `maskColumns` **adds** to the built-in patterns (`password`, `token`, `secret`, `nik`, `card_number`,
 and others); it never replaces them.
@@ -166,14 +175,50 @@ Rules enforced when the server starts (it refuses to start otherwise, naming the
 
 - Unknown fields are rejected, so a typo such as `readOnly` cannot silently do nothing.
 - A `${VAR}` that is missing or empty is an error; every missing variable is reported at once.
-- A literal password in `url` is rejected for `staging` and `production`.
+- **A password is never accepted as plain text in the config**, in any env (`local` included) and in `url` as well: it must be a `${VAR}` reference. This holds even if an entry is mislabeled `local`.
+- With separate fields, `host` must be a host name or an IP address; anything that could change the meaning of the connection URL (`/`, `?`, `@`, `#`, spaces, `:port`) is refused. Control characters are refused in every field.
 - `access` must be present and contain `read`; unknown or repeated values are rejected.
 
 Command line: `--config <file>`, `--dotenv <file>` (not `--env-file`, which Node.js intercepts),
 `--log-level`, `--log-file`, `--audit-dir`, `--audit-keep-days`, `--no-audit`. Run with `--help`.
 
-Passwords inside a URL must be URL-encoded. The simplest approach is to keep the whole connection
-string in one variable: `"url": "${PROD_PG_URL}"`.
+### Separate fields instead of one long `url`
+
+Instead of a single connection string, spell the parts out. Only the password is a secret, so only it
+needs to live in the env file; host, port, database, and user stay readable in `databases.json`:
+
+```json
+{
+  "id": "prod_pg",
+  "driver": "postgres",
+  "env": "production",
+  "access": ["read"],
+  "description": "Production PostgreSQL, read-only reports",
+  "host": "pg.example.internal",
+  "port": 5432,
+  "database": "app",
+  "user": "mcp_ro",
+  "password": "${PROD_PG_PASSWORD}"
+}
+```
+
+```bash
+# .env.multidb
+PROD_PG_PASSWORD=the-password
+```
+
+- Every text field may use `${VAR}`, for example `"host": "${PG_HOST}"`.
+- With separate fields the user and password are URL-encoded for you, so they may contain `@`, `:`, `/`, or `#`.
+- `port` defaults to the driver's standard port (PostgreSQL 5432, MySQL/MariaDB 3306, Db2 50000, Redis 6379).
+- Redis: `database` is the database number (default 0). SQLite: use `"file": "./database/app.sqlite"`.
+- Give either `url` or separate fields, not both. The password is always a `${VAR}` (see the rules above).
+  Options that have no field (for example `?ssl=true`) still need `url`, with the secret as a `${VAR}` inside it:
+  `"url": "postgres://mcp_ro:${PROD_PG_PASSWORD}@pg.example.internal:5432/app?sslmode=require"`.
+- A `${VAR}` is read from the real environment too, so the env file is optional when your service manager
+  or CI already sets the variables.
+- If the repository is public, keep internal host names out of it too: `"host": "${PG_HOST}"`, with
+  `PG_HOST=pg.internal.example` in the env file.
+- Db2: a value may not contain `;`; use a `url` holding the full connection string in that case.
 
 ## Permissions (`access`)
 

@@ -77,7 +77,11 @@ memakai `databases.dev.json`.
       "env": "production",
       "access": ["read", "update"],
       "description": "PostgreSQL production; boleh memperbaiki data (UPDATE), tidak boleh menambah atau menghapus",
-      "url": "${PROD_PG_URL}"
+      "host": "pg.example.internal",
+      "port": 5432,
+      "database": "app",
+      "user": "mcp_app",
+      "password": "${PROD_PG_PASSWORD}"
     }
   ]
 }
@@ -88,7 +92,13 @@ memakai `databases.dev.json`.
 - Statement yang butuh beberapa izin diperiksa seluruhnya: `INSERT … ON CONFLICT DO UPDATE` butuh
   `insert` + `update`, `MERGE` butuh `insert` + `update` + `delete`, `TRUNCATE` butuh `ddl` + `delete`.
 - Koneksi `["read"]` juga memakai transaksi read-only di database.
-- Password tidak boleh ditulis langsung di `url` untuk staging dan production; pakai `${VAR}`.
+- Password **tidak pernah** boleh ditulis langsung di config, di env apa pun (termasuk `local`) dan juga di `url`: wajib `${VAR}`. Ini berlaku walau sebuah entri salah diberi label `local`.
+- Alternatif `url` satu baris: tulis `host`, `port`, `database`, `user`, `password` sebagai field terpisah
+  di `databases.json` (SQLite: `file`). Hanya password yang perlu ada di `.env`
+  (`"password": "${PROD_PG_PASSWORD}"`), dan karakter khusus di-encode otomatis. Contohnya ada di
+  [`templates/databases.example.json`](templates/databases.example.json). Dengan field terpisah, `host`
+  harus nama host atau alamat IP (karakter seperti `/`, `?`, `@`, `#`, atau spasi ditolak). Untuk repo
+  publik, sembunyikan juga nama server internal: `"host": "${PG_HOST}"`.
 - Config yang salah (field tidak dikenal, variabel kosong, `access` tidak valid) membuat server
   menolak start dengan pesan yang menyebut masalahnya.
 - Opsi baris perintah: `--config`, `--dotenv` (bukan `--env-file`, yang dicegat Node.js), `--log-level`,

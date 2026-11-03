@@ -17,10 +17,13 @@ function registryOf(drivers: string[]) {
         env: 'local',
         access: ['read'],
         description: 'tool registration test',
-        url: driver === 'redis' ? 'redis://127.0.0.1:6379/0' : 'postgres://u:p@h/db',
+        url: driver === 'redis' ? '${REDIS_URL}' : '${PG_URL}',
       })),
     }),
-    { path: 'databases.json', env: {} },
+    {
+      path: 'databases.json',
+      env: { REDIS_URL: 'redis://127.0.0.1:6379/0', PG_URL: 'postgres://u:p@h/db' },
+    },
   );
   return new ConnectionRegistry(config.sources, {}, createLogger({ write: () => undefined }));
 }

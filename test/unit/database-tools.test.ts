@@ -70,7 +70,7 @@ function setup() {
           env: 'local',
           access: ['read', 'insert', 'update', 'delete', 'ddl', 'call'],
           description: 'local',
-          url: 'postgres://dev:dev@h/app',
+          url: '${DEV_PG}',
           schemas: ['app'],
         },
         {
@@ -79,7 +79,7 @@ function setup() {
           env: 'local',
           access: ['read'],
           description: 'local read-only',
-          url: 'postgres://dev:dev@h/app',
+          url: '${DEV_PG}',
           maxRows: 50,
           timeoutSec: 7,
         },
@@ -105,7 +105,7 @@ function setup() {
           env: 'local',
           access: ['read', 'insert', 'update', 'delete', 'ddl', 'call'],
           description: 'Db2 local',
-          url: 'DATABASE=X;UID=u;PWD=p;',
+          url: '${DEV_DB2}',
           schemas: ['APP'],
         },
         {
@@ -118,7 +118,14 @@ function setup() {
         },
       ],
     }),
-    { path: 'x', env: { PROD: 'postgres://ro:${x}@h/db' } },
+    {
+      path: 'x',
+      env: {
+        PROD: 'postgres://ro:${x}@h/db',
+        DEV_PG: 'postgres://dev:dev@h/app',
+        DEV_DB2: 'DATABASE=X;UID=u;PWD=p;',
+      },
+    },
   );
   const adapters = new Map<string, FakeAdapter>();
   const registry = new ConnectionRegistry(
