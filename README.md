@@ -112,11 +112,11 @@ The `.mcp.json` of this repository already starts the server with `databases.dev
 
 A project needs three files:
 
-| File             | Contents                                      | Commit it?       |
-| ---------------- | --------------------------------------------- | ---------------- |
-| `.mcp.json`      | How Claude Code starts the server             | yes              |
-| `databases.json` | The list of connections                       | yes (no secrets) |
-| `.env.multidb`   | Credentials, referenced from `databases.json` | **never**        |
+| File             | Contents                                    | Commit it?       |
+| ---------------- | ------------------------------------------- | ---------------- |
+| `.mcp.json`      | How Claude Code starts the server           | yes              |
+| `databases.json` | The list of connections                     | yes (no secrets) |
+| `.env.multidb`   | Passwords, referenced from `databases.json` | **never**        |
 
 ```json
 {
@@ -442,7 +442,8 @@ docker run -i --rm --init --pull=never --network host -e TZ=Europe/Berlin \
 ## Using it in an application project
 
 1. Copy `templates/databases.example.json` to `databases.json` in the project root and adjust it.
-2. Keep credentials in a separate file such as `.env.multidb`, and **add it to `.gitignore`**.
+2. Copy `templates/env.multidb.example` to `.env.multidb` and fill in the passwords (it lists every variable that
+   `databases.example.json` uses). Run `chmod 600 .env.multidb` and **add it to `.gitignore`** before creating it.
 3. Copy `templates/mcp.example.json` (plain `node`) or `templates/mcp.docker.example.json` (Docker, needed for
    Db2 on newer distributions) to `.mcp.json`. The path to `dist/index.js` must be absolute.
 4. Append `templates/CLAUDE.md.example` to the project's `CLAUDE.md` and merge

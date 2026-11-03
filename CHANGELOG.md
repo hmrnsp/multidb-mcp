@@ -14,6 +14,7 @@ All notable changes to this project are documented here. The format is based on
 - With separate fields, `host` is validated (a host name or an IP address) so it cannot change the meaning of the
   connection URL, and control characters are refused in every field.
 - A test that loads `databases.dev.json` and opens every development connection.
+- `templates/env.multidb.example`, the env file that goes with `templates/databases.example.json`.
 
 ### Removed
 

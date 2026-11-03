@@ -37,8 +37,10 @@ npm install
 npm run build
 ```
 
-Buat `databases.json` di project Anda dan file env terpisah untuk kredensial (misalnya
-`.env.multidb`, **jangan di-commit**), lalu daftarkan server di `.mcp.json` project:
+Buat `databases.json` di project Anda dan file env terpisah untuk password: salin
+[`templates/env.multidb.example`](templates/env.multidb.example) menjadi `.env.multidb`, isi, jalankan
+`chmod 600 .env.multidb`, dan **jangan di-commit** (tambahkan ke `.gitignore` lebih dulu). Lalu daftarkan
+server di `.mcp.json` project:
 
 ```json
 {
