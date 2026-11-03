@@ -25,6 +25,7 @@ All notable changes to this project are documented here. The format is based on
 - **Breaking:** a password written directly in the config is now rejected in **every** env (it used to be allowed
   for `env: local`), and also inside `url`. Use a `${VAR}` reference and keep the value in the env file.
 - The development config (`databases.dev.json`, `.env.example`) uses separate fields; only passwords are in `.env`.
+- The `*_LOCAL_RO_PASSWORD` variables are gone: the read-only `mcp_ro` test user is a fixed fixture that the server never uses.
 - `.env` now holds only passwords: the `*_LOCAL_URL`, `*_LOCAL_RO_URL`, `DB2_LOCAL_CONN`, and `DB2_DEV_CONN` variables are gone.
   The integration tests and scripts build their URLs from those passwords (`scripts/lib/dev-connections.mjs`).
 

@@ -1,4 +1,7 @@
-/** URL of a local development container, or '' when its password variable is not set. */
+/**
+ * URL of a local development container (127.0.0.1 only) for the read-write (`rw`) or the read-only
+ * (`ro`) user. '' until the read-write password variable is set.
+ */
 export function devUrl(
   kind: 'postgres' | 'mysql' | 'mariadb' | 'redis',
   role?: 'rw' | 'ro',
