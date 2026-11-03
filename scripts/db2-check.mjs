@@ -15,6 +15,7 @@
 //   5. identifier upper-case rule
 
 import { createRequire } from 'node:module';
+import { devDb2Conn, sharedDb2Conn } from './lib/dev-connections.mjs';
 import { parseArgs } from 'node:util';
 import {
   cb,
@@ -101,10 +102,16 @@ async function main() {
   if (!loaded.ok) return check.finish({ fatal: 'ibm_db could not be loaded' });
 
   // 2. Connection string & connection ------------------------------------------------------
-  const envKey = IS_LOCAL ? 'DB2_LOCAL_CONN' : 'DB2_DEV_CONN';
+  const envKey = IS_LOCAL ? 'DB2_LOCAL_PASSWORD' : 'DB2_DEV_PASSWORD';
   let conn = '';
   const config = await check.step(`Read ${envKey} from .env`, () => {
-    conn = requireEnv(envKey);
+    requireEnv(envKey);
+    conn = IS_LOCAL ? devDb2Conn() : sharedDb2Conn();
+    if (conn === '') {
+      throw new Error(
+        'Set DB2_DEV_HOST, DB2_DEV_DATABASE, DB2_DEV_USER, and DB2_DEV_PASSWORD in .env.',
+      );
+    }
     const host = hostOf(conn);
     if (IS_LOCAL && !isLocalHost(host)) {
       throw new Error(`The local target must point to 127.0.0.1/localhost, not "${host}".`);

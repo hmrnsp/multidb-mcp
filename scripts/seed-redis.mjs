@@ -8,12 +8,13 @@ import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createClient } from '@redis/client';
+import { devUrl } from './lib/dev-connections.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 if (existsSync(join(ROOT, '.env'))) process.loadEnvFile(join(ROOT, '.env'));
 
-const url = process.env.REDIS_LOCAL_URL?.trim();
-if (!url) throw new Error('REDIS_LOCAL_URL is not set in .env');
+const url = devUrl('redis');
+if (!url) throw new Error('REDIS_LOCAL_PASSWORD is not set in .env');
 const host = new URL(url).hostname;
 if (!['127.0.0.1', 'localhost', '::1'].includes(host)) {
   throw new Error(`The seed is only for a local Redis, not "${host}". Aborted.`);

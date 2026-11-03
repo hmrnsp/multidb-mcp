@@ -3,10 +3,11 @@
 //
 //   npm run seed:db2
 //
-// Safeguard: only uses DB2_LOCAL_CONN and refuses to run when HOSTNAME is not
+// Safeguard: only uses the local Db2 (DB2_LOCAL_PASSWORD) and refuses to run when HOSTNAME is not
 // localhost/127.0.0.1. This script is safe to run repeatedly (idempotent).
 
 import { createRequire } from 'node:module';
+import { devDb2Conn } from './lib/dev-connections.mjs';
 import {
   cb,
   describeError,
@@ -58,7 +59,8 @@ function isAlreadyExists(err) {
 
 async function main() {
   loadEnv();
-  const conn = requireEnv('DB2_LOCAL_CONN');
+  requireEnv('DB2_LOCAL_PASSWORD');
+  const conn = devDb2Conn();
   const host = hostOf(conn);
   if (!isLocalHost(host)) {
     throw new Error(

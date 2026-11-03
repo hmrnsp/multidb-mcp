@@ -6,11 +6,12 @@
  *   npm run test:integration
  *
  * Uses Redis database number 1 so the sample data in database 0 (npm run seed:redis) is left alone.
- * Skipped automatically when REDIS_LOCAL_URL is not set in .env.
+ * Skipped automatically when REDIS_LOCAL_PASSWORD is not set in .env.
  */
 import { existsSync } from 'node:fs';
 import { createClient } from '@redis/client';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { devUrl } from '../../scripts/lib/dev-connections.mjs';
 import { ADAPTER_FACTORIES } from '../../src/adapters/index.js';
 import type { Access } from '../../src/config/schema.js';
 import { parseConfig } from '../../src/config/loader.js';
@@ -22,8 +23,8 @@ import { REDIS_SENSITIVE_PATTERNS, runRedisCommand } from '../../src/tools/redis
 import type { ToolResult } from '../../src/tools/result.js';
 
 if (existsSync('.env')) process.loadEnvFile('.env');
-const BASE = process.env.REDIS_LOCAL_URL?.trim() ?? '';
-const RO_BASE = process.env.REDIS_LOCAL_RO_URL?.trim() ?? '';
+const BASE = devUrl('redis');
+const RO_BASE = devUrl('redis', 'ro');
 const onDb1 = (url: string) => url.replace(/\/\d*$/, '/1');
 const log = createLogger({ level: 'error' });
 const FULL: Access[] = ['read', 'insert', 'update', 'delete'];

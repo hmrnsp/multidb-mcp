@@ -4,10 +4,11 @@
  *   npm run db:up:db2 && npm run seed:db2      (the seed runs through docker:dev)
  *   npm run docker:dev -- npm run test:db2
  *
- * Skipped automatically when DB2_LOCAL_CONN is not set in .env.
+ * Skipped automatically when DB2_LOCAL_PASSWORD is not set in .env.
  */
 import { existsSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { devDb2Conn } from '../../scripts/lib/dev-connections.mjs';
 import { Db2Adapter } from '../../src/adapters/db2/db2-adapter.js';
 import { loadDb2PoolFactory } from '../../src/adapters/db2/db2-driver.js';
 import { DbError } from '../../src/adapters/errors.js';
@@ -16,7 +17,7 @@ import { Secret } from '../../src/config/secret.js';
 import { createLogger } from '../../src/observability/logger.js';
 
 if (existsSync('.env')) process.loadEnvFile('.env');
-const CONN = process.env.DB2_LOCAL_CONN?.trim() ?? '';
+const CONN = devDb2Conn();
 const log = createLogger({ level: 'warn' });
 
 function source(connection: string, extra: Partial<ResolvedSource> = {}): ResolvedSource {

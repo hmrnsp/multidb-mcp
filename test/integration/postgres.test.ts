@@ -4,10 +4,11 @@
  *   npm run db:up
  *   npm run test:integration
  *
- * Skipped automatically when PG_LOCAL_URL is not set in .env.
+ * Skipped automatically when PG_LOCAL_PASSWORD is not set in .env.
  */
 import { existsSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { devUrl } from '../../scripts/lib/dev-connections.mjs';
 import { DbError } from '../../src/adapters/errors.js';
 import { loadPgPoolFactory } from '../../src/adapters/postgres/pg-driver.js';
 import { PostgresAdapter } from '../../src/adapters/postgres/postgres-adapter.js';
@@ -16,8 +17,8 @@ import { Secret } from '../../src/config/secret.js';
 import { createLogger } from '../../src/observability/logger.js';
 
 if (existsSync('.env')) process.loadEnvFile('.env');
-const URL = process.env.PG_LOCAL_URL?.trim() ?? '';
-const RO_URL = process.env.PG_LOCAL_RO_URL?.trim() ?? '';
+const URL = devUrl('postgres');
+const RO_URL = devUrl('postgres', 'ro');
 const log = createLogger({ level: 'warn' });
 
 function source(url: string, extra: Partial<ResolvedSource> = {}): ResolvedSource {

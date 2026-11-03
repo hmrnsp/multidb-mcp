@@ -8,6 +8,7 @@
  */
 import { existsSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { devUrl } from '../../scripts/lib/dev-connections.mjs';
 import { DbError } from '../../src/adapters/errors.js';
 import { MysqlAdapter, type MysqlAdapterOptions } from '../../src/adapters/mysql/mysql-adapter.js';
 import { loadMysqlPoolFactory } from '../../src/adapters/mysql/mysql-driver.js';
@@ -18,11 +19,10 @@ import { createLogger } from '../../src/observability/logger.js';
 
 if (existsSync('.env')) process.loadEnvFile('.env');
 const log = createLogger({ level: 'warn' });
-const env = (key: string): string => process.env[key]?.trim() ?? '';
 
 const FLAVORS: { flavor: MysqlFlavor; url: string; roUrl: string }[] = [
-  { flavor: 'mysql', url: env('MYSQL_LOCAL_URL'), roUrl: env('MYSQL_LOCAL_RO_URL') },
-  { flavor: 'mariadb', url: env('MARIADB_LOCAL_URL'), roUrl: env('MARIADB_LOCAL_RO_URL') },
+  { flavor: 'mysql', url: devUrl('mysql'), roUrl: devUrl('mysql', 'ro') },
+  { flavor: 'mariadb', url: devUrl('mariadb'), roUrl: devUrl('mariadb', 'ro') },
 ];
 
 function source(
