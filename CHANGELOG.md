@@ -15,6 +15,11 @@ All notable changes to this project are documented here. The format is based on
   connection URL, and control characters are refused in every field.
 - A test that loads `databases.dev.json` and opens every development connection.
 
+### Removed
+
+- `npm run check:db2:dev` and the `DB2_DEV_*` variables (a read-only probe of a shared Db2). Register that Db2 in
+  `databases.json` and use it through the server instead. `npm run check:db2` for the local Db2 container remains.
+
 ### Changed
 
 - **Breaking:** a password written directly in the config is now rejected in **every** env (it used to be allowed
@@ -22,7 +27,6 @@ All notable changes to this project are documented here. The format is based on
 - The development config (`databases.dev.json`, `.env.example`) uses separate fields; only passwords are in `.env`.
 - `.env` now holds only passwords: the `*_LOCAL_URL`, `*_LOCAL_RO_URL`, `DB2_LOCAL_CONN`, and `DB2_DEV_CONN` variables are gone.
   The integration tests and scripts build their URLs from those passwords (`scripts/lib/dev-connections.mjs`).
-  A shared development Db2 is configured with `DB2_DEV_HOST`, `DB2_DEV_PORT`, `DB2_DEV_DATABASE`, `DB2_DEV_USER`, and `DB2_DEV_PASSWORD`.
 
 ## [0.9.0] - 2026-11-02
 

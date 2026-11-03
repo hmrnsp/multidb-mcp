@@ -55,17 +55,3 @@ export function devDb2Conn() {
   if (password === '') return '';
   return `DATABASE=APPDB;HOSTNAME=${HOST};PORT=55000;PROTOCOL=TCPIP;UID=db2inst1;PWD=${password};`;
 }
-
-/**
- * ibm_db connection string of a shared development Db2, from DB2_DEV_HOST, DB2_DEV_PORT,
- * DB2_DEV_DATABASE, DB2_DEV_USER, and DB2_DEV_PASSWORD. Returns '' unless all of them are set.
- */
-export function sharedDb2Conn() {
-  const host = read('DB2_DEV_HOST');
-  const port = read('DB2_DEV_PORT') || '50000';
-  const database = read('DB2_DEV_DATABASE');
-  const user = read('DB2_DEV_USER');
-  const password = read('DB2_DEV_PASSWORD');
-  if ([host, database, user, password].includes('')) return '';
-  return `DATABASE=${database};HOSTNAME=${host};PORT=${port};PROTOCOL=TCPIP;UID=${user};PWD=${password};`;
-}

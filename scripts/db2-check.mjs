@@ -2,8 +2,8 @@
 // Db2 check: proves that ibm_db works on this machine and verifies the assumptions
 // behind the Db2 adapter.
 //
-//   npm run check:db2       -> a local Db2 (docker), every check including write+rollback & timeout
-//   npm run check:db2:dev   -> a shared development Db2, read-only checks ONLY
+//   npm run docker:dev -- npm run check:db2   -> the local Db2 container, every check including
+//                                                write+rollback and the query timeout
 //
 // Options:  --max-rows 100   --timeout-sec 2
 //
@@ -15,7 +15,7 @@
 //   5. identifier upper-case rule
 
 import { createRequire } from 'node:module';
-import { devDb2Conn, sharedDb2Conn } from './lib/dev-connections.mjs';
+import { devDb2Conn } from './lib/dev-connections.mjs';
 import { parseArgs } from 'node:util';
 import {
   cb,
@@ -34,19 +34,15 @@ const require = createRequire(import.meta.url);
 
 const { values: args } = parseArgs({
   options: {
-    target: { type: 'string', default: 'local' },
     'max-rows': { type: 'string', default: '100' },
     'timeout-sec': { type: 'string', default: '2' },
   },
 });
 
-const TARGET = args.target === 'dev' ? 'dev' : 'local';
 const MAX_ROWS = Math.max(1, Number.parseInt(args['max-rows'], 10) || 100);
 const TIMEOUT_SEC = Math.max(1, Number.parseInt(args['timeout-sec'], 10) || 2);
-const IS_LOCAL = TARGET === 'local';
 
-const check = createCheck(`db2-${TARGET}`, {
-  target: TARGET,
+const check = createCheck('db2-local', {
   maxRows: MAX_ROWS,
   timeoutSec: TIMEOUT_SEC,
 });
@@ -102,23 +98,17 @@ async function main() {
   if (!loaded.ok) return check.finish({ fatal: 'ibm_db could not be loaded' });
 
   // 2. Connection string & connection ------------------------------------------------------
-  const envKey = IS_LOCAL ? 'DB2_LOCAL_PASSWORD' : 'DB2_DEV_PASSWORD';
   let conn = '';
-  const config = await check.step(`Read ${envKey} from .env`, () => {
-    requireEnv(envKey);
-    conn = IS_LOCAL ? devDb2Conn() : sharedDb2Conn();
-    if (conn === '') {
-      throw new Error(
-        'Set DB2_DEV_HOST, DB2_DEV_DATABASE, DB2_DEV_USER, and DB2_DEV_PASSWORD in .env.',
-      );
-    }
+  const config = await check.step('Read DB2_LOCAL_PASSWORD from .env', () => {
+    requireEnv('DB2_LOCAL_PASSWORD');
+    conn = devDb2Conn();
     const host = hostOf(conn);
-    if (IS_LOCAL && !isLocalHost(host)) {
+    if (!isLocalHost(host)) {
       throw new Error(`The local target must point to 127.0.0.1/localhost, not "${host}".`);
     }
     return { connection: redact(conn), host };
   });
-  if (!config.ok) return check.finish({ fatal: `${envKey} is not set` });
+  if (!config.ok) return check.finish({ fatal: 'DB2_LOCAL_PASSWORD is not set' });
 
   const opened = await check.step('Open a connection', async () => {
     db = await withDeadline(
@@ -168,9 +158,7 @@ async function main() {
     });
 
     // 4. SYSCAT catalog ----------------------------------------------------------------------
-    const schema = (
-      IS_LOCAL ? 'APP' : process.env.DB2_DEV_SCHEMA?.trim() || currentSchema
-    ).toUpperCase();
+    const schema = 'APP';
     let sampleTable = '';
 
     await check.step(`Catalog: tables & views in schema ${schema}`, async () => {
@@ -184,66 +172,61 @@ async function main() {
       );
       if (rows.length === 0)
         throw new Error(
-          `There are no tables in schema ${schema}. Run the seed or check DB2_DEV_SCHEMA.`,
+          `There are no tables in schema ${schema}. Run the seed: npm run docker:dev -- node scripts/seed-db2.mjs.`,
         );
       const table = rows.find((r) => String(r.TYPE).trim() === 'T') ?? rows[0];
       sampleTable = String(table.TABNAME).trim();
       return {
         tables: rows.filter((r) => String(r.TYPE).trim() === 'T').length,
         views: rows.filter((r) => String(r.TYPE).trim() === 'V').length,
-        // The table name is only shown for a local database (sample data).
-        ...(IS_LOCAL ? { names: rows.map((r) => String(r.TABNAME).trim()) } : {}),
+        names: rows.map((r) => String(r.TABNAME).trim()),
       };
     });
 
     if (sampleTable) {
-      await check.step(
-        `Catalog: columns, PK, FK, indexes (${IS_LOCAL ? sampleTable : 'sample table'})`,
-        async () => {
-          const columns = await query(
-            db,
-            `SELECT COLNAME, TYPENAME, LENGTH, SCALE, NULLS, "DEFAULT" AS DEFAULT_VALUE
+      await check.step(`Catalog: columns, PK, FK, indexes (${sampleTable})`, async () => {
+        const columns = await query(
+          db,
+          `SELECT COLNAME, TYPENAME, LENGTH, SCALE, NULLS, "DEFAULT" AS DEFAULT_VALUE
            FROM SYSCAT.COLUMNS WHERE TABSCHEMA = ? AND TABNAME = ? ORDER BY COLNO`,
-            [schema, sampleTable],
-          );
-          const pk = await query(
-            db,
-            `SELECT K.COLNAME FROM SYSCAT.KEYCOLUSE K
+          [schema, sampleTable],
+        );
+        const pk = await query(
+          db,
+          `SELECT K.COLNAME FROM SYSCAT.KEYCOLUSE K
            JOIN SYSCAT.TABCONST C
              ON C.CONSTNAME = K.CONSTNAME AND C.TABSCHEMA = K.TABSCHEMA AND C.TABNAME = K.TABNAME
            WHERE C.TYPE = 'P' AND K.TABSCHEMA = ? AND K.TABNAME = ?
            ORDER BY K.COLSEQ`,
-            [schema, sampleTable],
-          );
-          const fk = await query(
-            db,
-            `SELECT CONSTNAME, REFTABSCHEMA, REFTABNAME, FK_COLNAMES, PK_COLNAMES
+          [schema, sampleTable],
+        );
+        const fk = await query(
+          db,
+          `SELECT CONSTNAME, REFTABSCHEMA, REFTABNAME, FK_COLNAMES, PK_COLNAMES
            FROM SYSCAT.REFERENCES WHERE TABSCHEMA = ? AND TABNAME = ?`,
-            [schema, sampleTable],
+          [schema, sampleTable],
+        );
+        const indexes = await query(
+          db,
+          'SELECT INDNAME, COLNAMES, UNIQUERULE FROM SYSCAT.INDEXES WHERE TABSCHEMA = ? AND TABNAME = ?',
+          [schema, sampleTable],
+        );
+        if (columns.length === 0) throw new Error('SYSCAT.COLUMNS is empty for the sample table');
+        if (pk.length !== 1 || fk.length !== 1 || indexes.length < 2) {
+          throw new Error(
+            `Seed mismatch: pk=${pk.length}, fk=${fk.length}, index=${indexes.length}`,
           );
-          const indexes = await query(
-            db,
-            'SELECT INDNAME, COLNAMES, UNIQUERULE FROM SYSCAT.INDEXES WHERE TABSCHEMA = ? AND TABNAME = ?',
-            [schema, sampleTable],
-          );
-          if (columns.length === 0) throw new Error('SYSCAT.COLUMNS is empty for the sample table');
-          if (IS_LOCAL && (pk.length !== 1 || fk.length !== 1 || indexes.length < 2)) {
-            throw new Error(
-              `Seed mismatch: pk=${pk.length}, fk=${fk.length}, index=${indexes.length}`,
-            );
-          }
-          return {
-            columns: columns.length,
-            primaryKey: pk.length,
-            foreignKeys: fk.length,
-            indexes: indexes.length,
-            // Example FK_COLNAMES / COLNAMES format (contains spaces & +/- prefixes) for the adapter parser.
-            ...(IS_LOCAL
-              ? { fkColnames: fk[0]?.FK_COLNAMES, indexColnames: indexes.map((i) => i.COLNAMES) }
-              : {}),
-          };
-        },
-      );
+        }
+        return {
+          columns: columns.length,
+          primaryKey: pk.length,
+          foreignKeys: fk.length,
+          indexes: indexes.length,
+          // Example FK_COLNAMES / COLNAMES format (contains spaces & +/- prefixes) for the adapter parser.
+          fkColnames: fk[0]?.FK_COLNAMES,
+          indexColnames: indexes.map((i) => i.COLNAMES),
+        };
+      });
     } else {
       check.skip('Catalog: columns, PK, FK, indexes', 'no sample table');
     }
@@ -314,11 +297,11 @@ async function main() {
         'Query timeout',
         'the SQL_ATTR_QUERY_TIMEOUT constant does not exist in this ibm_db version',
       );
-    } else if (IS_LOCAL) {
+    } else {
       await check.step(
         `A query timeout of ${TIMEOUT_SEC} seconds cancels a heavy query`,
         async () => {
-          // A 3-way Cartesian product over the catalog: deliberately heavy, ONLY on a local Db2.
+          // A 3-way Cartesian product over the catalog: deliberately heavy.
           const stmt = await prepare(
             db,
             'SELECT COUNT(*) AS N FROM SYSCAT.COLUMNS A, SYSCAT.COLUMNS B, SYSCAT.COLUMNS C',
@@ -380,64 +363,33 @@ async function main() {
           }
         },
       );
-    } else {
-      await check.step(
-        'The query timeout attribute is accepted (without a heavy query)',
-        async () => {
-          const stmt = await prepare(db, 'SELECT 1 AS N FROM SYSIBM.SYSDUMMY1');
-          let result;
-          try {
-            stmt.setAttrSync(ibmdb.SQL_ATTR_QUERY_TIMEOUT, TIMEOUT_SEC);
-            result = await execute(stmt);
-            const row = await fetchRow(result, ibmdb.FETCH_ARRAY);
-            return { accepted: true, row };
-          } finally {
-            closeQuietly(result);
-            closeQuietly(stmt);
-          }
-        },
-      );
     }
 
     // 8. Transaction + ROLLBACK ----------------------------------------------------------------
-    if (IS_LOCAL) {
-      await check.step(
-        'INSERT inside a transaction, then ROLLBACK (the data returns to how it was)',
-        async () => {
-          const countOrders = async () =>
-            Number((await query(db, 'SELECT COUNT(*) AS N FROM APP.ORDERS'))[0].N);
-          const before = await countOrders();
-          await cb((done) => db.beginTransaction(done));
-          let inside;
-          try {
-            await query(
-              db,
-              "INSERT INTO APP.ORDERS (CUSTOMER_ID, TOTAL, STATUS) VALUES (1, 1.00, 'check')",
-            );
-            inside = await countOrders();
-          } finally {
-            await cb((done) => db.rollbackTransaction(done));
-          }
-          const after = await countOrders();
-          if (inside !== before + 1 || after !== before) {
-            throw new Error(
-              `Rollback mismatch: before=${before}, inside=${inside}, after=${after}`,
-            );
-          }
-          return { before, inside, after };
-        },
-      );
-    } else {
-      await check.step('A read transaction, then ROLLBACK (without writing)', async () => {
+    await check.step(
+      'INSERT inside a transaction, then ROLLBACK (the data returns to how it was)',
+      async () => {
+        const countOrders = async () =>
+          Number((await query(db, 'SELECT COUNT(*) AS N FROM APP.ORDERS'))[0].N);
+        const before = await countOrders();
         await cb((done) => db.beginTransaction(done));
+        let inside;
         try {
-          await query(db, 'SELECT 1 AS N FROM SYSIBM.SYSDUMMY1');
+          await query(
+            db,
+            "INSERT INTO APP.ORDERS (CUSTOMER_ID, TOTAL, STATUS) VALUES (1, 1.00, 'check')",
+          );
+          inside = await countOrders();
         } finally {
           await cb((done) => db.rollbackTransaction(done));
         }
-        return 'ok';
-      });
-    }
+        const after = await countOrders();
+        if (inside !== before + 1 || after !== before) {
+          throw new Error(`Rollback mismatch: before=${before}, inside=${inside}, after=${after}`);
+        }
+        return { before, inside, after };
+      },
+    );
 
     // 9. Data type mapping ------------------------------------------------------------------------
     const typeSql = (withBlob) => `SELECT
