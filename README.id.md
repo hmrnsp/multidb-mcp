@@ -60,8 +60,11 @@ server di `.mcp.json` project:
 ```
 
 Buka project di Claude Code, setujui server `multidb`, lalu ketik `/mcp`: statusnya harus
-**connected**. Contoh [`templates/`](templates) berisi `databases.json`, `.mcp.json` (node dan Docker),
-`CLAUDE.md`, dan `.claude/settings.json`.
+**connected**. Contoh [`templates/`](templates) berisi `databases.json`, `.mcp.json` (node, Docker, dan
+Windows), `AGENTS.md`, `CLAUDE.md`, dan `.claude/settings.json`.
+
+Panduan langkah demi langkah (Docker atau Node, sampai verifikasi dan troubleshooting) ada di
+[docs/how-to.id.md](docs/how-to.id.md).
 
 Untuk mencoba tanpa menyiapkan apa pun: `cp .env.example .env`, `npm run db:up`,
 `npm run seed:sqlite`, `npm run seed:redis`, `npm run build`. File `.mcp.json` di repo ini sudah

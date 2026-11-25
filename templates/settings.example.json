@@ -5,6 +5,14 @@
       "mcp__multidb__list_tables",
       "mcp__multidb__describe_table"
     ],
-    "ask": ["mcp__multidb__execute_sql", "mcp__multidb__redis_command"]
+    "ask": ["mcp__multidb__execute_sql", "mcp__multidb__redis_command"],
+    "deny": [
+      "Read(./.env.multidb)",
+      "Bash(psql:*)",
+      "Bash(mysql:*)",
+      "Bash(mariadb:*)",
+      "Bash(db2:*)",
+      "Bash(redis-cli:*)"
+    ]
   }
 }
