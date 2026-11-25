@@ -1,3 +1,5 @@
-<!-- Claude Code imports the file below. The database rules live in AGENTS.md so every agent reads the same text. -->
+# Project instructions
+
+Database rules for every agent are in AGENTS.md (copied from templates/AGENTS.md.example).
 
 @AGENTS.md
