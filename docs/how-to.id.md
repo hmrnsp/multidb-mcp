@@ -40,14 +40,14 @@ aplikasi Anda**, bukan di repo multidb-mcp. Satu image/build bisa dipakai banyak
 
 ## 2. Pilih cara menjalankan
 
-| Hal                      | A. Docker                                  | B. Node langsung                            |
-| ------------------------ | ------------------------------------------ | ------------------------------------------- |
-| Db2                      | Berfungsi                                  | **Gagal di Ubuntu 26.04** (butuh libxml2.so.2) |
-| PostgreSQL/MySQL/SQLite/Redis | Berfungsi                             | Berfungsi                                   |
-| Yang dipasang di host    | Hanya Docker                               | Node.js 24 + `npm install` + `npm run build` |
-| Kecepatan start          | Sedikit lebih lambat (start container)     | Cepat                                       |
-| Isolasi                  | Hanya melihat file yang di-mount           | Berjalan dengan hak akses user Anda         |
-| Konsisten dev ↔ produksi | Ya (image yang sama)                       | Tergantung versi Node di tiap mesin         |
+| Hal                           | A. Docker                              | B. Node langsung                               |
+| ----------------------------- | -------------------------------------- | ---------------------------------------------- |
+| Db2                           | Berfungsi                              | **Gagal di Ubuntu 26.04** (butuh libxml2.so.2) |
+| PostgreSQL/MySQL/SQLite/Redis | Berfungsi                              | Berfungsi                                      |
+| Yang dipasang di host         | Hanya Docker                           | Node.js 24 + `npm install` + `npm run build`   |
+| Kecepatan start               | Sedikit lebih lambat (start container) | Cepat                                          |
+| Isolasi                       | Hanya melihat file yang di-mount       | Berjalan dengan hak akses user Anda            |
+| Konsisten dev ↔ produksi      | Ya (image yang sama)                   | Tergantung versi Node di tiap mesin            |
 
 **Rekomendasi:** pakai **Docker** jika Anda butuh Db2 atau ingin hasil yang sama di laptop dan
 server Linux produksi. Pakai **Node langsung** jika hanya memakai PostgreSQL/MySQL/SQLite/Redis dan
@@ -55,7 +55,7 @@ ingin start paling cepat.
 
 ## 3. Siapkan file di project Anda
 
-Langkah ini sama untuk kedua cara. Contoh di bawah memakai `/home/rede/projects/aplikasi`; ganti sesuai
+Langkah ini sama untuk kedua cara. Contoh di bawah memakai `/home/USER/projects/aplikasi`; ganti sesuai
 project Anda.
 
 ### 3.1 Lindungi file rahasia dulu
@@ -63,14 +63,14 @@ project Anda.
 Tambahkan ke `.gitignore` project **sebelum** membuat file password:
 
 ```bash
-cd /home/rede/projects/aplikasi
+cd /home/USER/projects/aplikasi
 printf '\n# multidb-mcp\n.env.multidb\n.multidb/\n' >> .gitignore
 ```
 
 ### 3.2 `databases.json`
 
 ```bash
-cp /home/rede/Apps/TYPESCRIPT/multidb-mcp/templates/databases.example.json databases.json
+cp /home/USER/multidb-mcp/templates/databases.example.json databases.json
 ```
 
 Sunting: hapus koneksi yang tidak Anda perlukan dan sesuaikan `host`, `port`, `database`, `user`.
@@ -88,7 +88,7 @@ Aturan penting:
 ### 3.3 `.env.multidb` (hanya password)
 
 ```bash
-cp /home/rede/Apps/TYPESCRIPT/multidb-mcp/templates/env.multidb.example .env.multidb
+cp /home/USER/multidb-mcp/templates/env.multidb.example .env.multidb
 chmod 600 .env.multidb
 ```
 
@@ -116,7 +116,7 @@ Server menulis log audit (siapa menjalankan apa, tanpa nilai data) ke sini. Fold
 ### 4.2 Build image (sekali, dan setiap kali Anda memperbarui multidb-mcp)
 
 ```bash
-cd /home/rede/Apps/TYPESCRIPT/multidb-mcp
+cd /home/USER/multidb-mcp
 npm run docker:build
 docker image ls multidb-mcp     # harus ada tag 0.9.0 dan latest
 ```
@@ -126,7 +126,7 @@ berbasis `node:24-bookworm-slim` dan berjalan sebagai user `node` (bukan root).
 
 ### 4.3 Daftarkan di `.mcp.json` project Anda
 
-Buat `/home/rede/projects/aplikasi/.mcp.json`:
+Buat `/home/USER/projects/aplikasi/.mcp.json`:
 
 ```json
 {
@@ -134,15 +134,26 @@ Buat `/home/rede/projects/aplikasi/.mcp.json`:
     "multidb": {
       "command": "docker",
       "args": [
-        "run", "-i", "--rm", "--init", "--pull=never",
-        "--network", "host",
-        "-e", "TZ=Asia/Jakarta",
-        "-v", "/home/rede/projects/aplikasi/databases.json:/work/databases.json:ro",
-        "-v", "/home/rede/projects/aplikasi/.env.multidb:/work/.env.multidb:ro",
-        "-v", "/home/rede/projects/aplikasi/.multidb:/work/.multidb",
+        "run",
+        "-i",
+        "--rm",
+        "--init",
+        "--pull=never",
+        "--network",
+        "host",
+        "-e",
+        "TZ=Asia/Jakarta",
+        "-v",
+        "/home/USER/projects/aplikasi/databases.json:/work/databases.json:ro",
+        "-v",
+        "/home/USER/projects/aplikasi/.env.multidb:/work/.env.multidb:ro",
+        "-v",
+        "/home/USER/projects/aplikasi/.multidb:/work/.multidb",
         "multidb-mcp:latest",
-        "--config", "/work/databases.json",
-        "--dotenv", "/work/.env.multidb"
+        "--config",
+        "/work/databases.json",
+        "--dotenv",
+        "/work/.env.multidb"
       ]
     }
   }
@@ -151,24 +162,24 @@ Buat `/home/rede/projects/aplikasi/.mcp.json`:
 
 Arti setiap bagian:
 
-| Bagian                        | Fungsi                                                                              |
-| ----------------------------- | ----------------------------------------------------------------------------------- |
-| `-i`                          | Wajib. Menjaga stdin tetap terbuka untuk protokol MCP.                              |
-| `--rm`                        | Container dihapus saat sesi selesai.                                                |
-| `--init`                      | Menangani sinyal dengan benar agar container berhenti bersih.                       |
-| `--pull=never`                | Tidak pernah mengunduh image; memakai image hasil build lokal.                      |
-| `--network host`              | Container melihat jaringan host: `127.0.0.1`, jaringan kantor, dan VPN.             |
-| `-e TZ=...`                   | Zona waktu untuk pembagian file audit per tanggal. Container default UTC.           |
-| `-v ...:ro`                   | Config dan password di-mount **read-only**.                                         |
-| `-v .multidb:/work/.multidb`  | Satu-satunya folder yang bisa ditulis (audit).                                      |
-| `--config`, `--dotenv`        | Path **di dalam container** (`/work/...`), bukan path host.                         |
+| Bagian                       | Fungsi                                                                    |
+| ---------------------------- | ------------------------------------------------------------------------- |
+| `-i`                         | Wajib. Menjaga stdin tetap terbuka untuk protokol MCP.                    |
+| `--rm`                       | Container dihapus saat sesi selesai.                                      |
+| `--init`                     | Menangani sinyal dengan benar agar container berhenti bersih.             |
+| `--pull=never`               | Tidak pernah mengunduh image; memakai image hasil build lokal.            |
+| `--network host`             | Container melihat jaringan host: `127.0.0.1`, jaringan kantor, dan VPN.   |
+| `-e TZ=...`                  | Zona waktu untuk pembagian file audit per tanggal. Container default UTC. |
+| `-v ...:ro`                  | Config dan password di-mount **read-only**.                               |
+| `-v .multidb:/work/.multidb` | Satu-satunya folder yang bisa ditulis (audit).                            |
+| `--config`, `--dotenv`       | Path **di dalam container** (`/work/...`), bukan path host.               |
 
 > Path di `-v` harus **absolut**. `~` dan `$HOME` tidak diperluas di `.mcp.json`.
 
 ### 4.4 Uji manual sebelum membuka Claude Code
 
 ```bash
-cd /home/rede/projects/aplikasi
+cd /home/USER/projects/aplikasi
 printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"test","version":"0"}}}' \
   | docker run -i --rm --init --pull=never --network host \
       -v "$PWD/databases.json:/work/databases.json:ro" \
@@ -189,7 +200,7 @@ menyebut field atau variabel yang salah.
 ### 5.2 Build (sekali, dan setiap kali memperbarui)
 
 ```bash
-cd /home/rede/Apps/TYPESCRIPT/multidb-mcp
+cd /home/USER/multidb-mcp
 npm install
 npm run build
 ```
@@ -202,9 +213,11 @@ npm run build
     "multidb": {
       "command": "node",
       "args": [
-        "/home/rede/Apps/TYPESCRIPT/multidb-mcp/dist/index.js",
-        "--config", "databases.json",
-        "--dotenv", ".env.multidb"
+        "/home/USER/multidb-mcp/dist/index.js",
+        "--config",
+        "databases.json",
+        "--dotenv",
+        ".env.multidb"
       ]
     }
   }
@@ -223,10 +236,14 @@ Catatan: jika `databases.json` berisi koneksi Db2, cara ini gagal di Ubuntu 26.0
 3. Ketik `/mcp`. Status `multidb` harus **connected**.
 4. Sebagai langkah opsional yang disarankan:
    - Salin `templates/settings.example.json` ke `.claude/settings.json`. Tool baca berjalan tanpa
-     konfirmasi, sedangkan `execute_sql` dan `redis_command` tetap meminta persetujuan.
-   - Salin `templates/CLAUDE.md.example` ke `CLAUDE.md` project dan sesuaikan nama koneksi. Isinya
-     aturan agar Claude tidak menyentuh production tanpa diminta dan selalu menyebut koneksi yang
-     dipakai.
+     konfirmasi, sedangkan `execute_sql` dan `redis_command` tetap meminta persetujuan. Bagian `deny`
+     melarang Claude membaca `.env.multidb` dan memakai psql, mysql, db2, atau redis-cli.
+   - Salin `templates/AGENTS.md.example` ke `AGENTS.md` project dan ganti id koneksi dengan id dari
+     `databases.json`. Isinya aturan kerja untuk Claude dan agen lain.
+   - Tambahkan baris `@AGENTS.md` ke `CLAUDE.md` project (lihat `templates/CLAUDE.md.example`). Claude
+     Code mengimpor file itu, jadi aturannya cukup ditulis di satu tempat.
+   - Prompt bukan pengaman. Pengaman yang sebenarnya adalah guard, `access`, user database read-only,
+     dan `deny` di settings.
 
 Contoh permintaan:
 
@@ -250,7 +267,7 @@ Daftar periksa setelah pemasangan:
 ## 8. Pembaruan
 
 ```bash
-cd /home/rede/Apps/TYPESCRIPT/multidb-mcp
+cd /home/USER/multidb-mcp
 git pull
 npm run docker:build      # Cara A
 # atau
@@ -261,14 +278,14 @@ Lalu mulai ulang sesi Claude Code (atau `/mcp` → hubungkan ulang) agar memakai
 
 ## 9. Troubleshooting
 
-| Gejala                                                | Penyebab umum                                      | Perbaikan                                                                 |
-| ----------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------- |
-| `/mcp` menampilkan **failed**                         | Config salah atau variabel env kosong              | Jalankan perintah uji (4.4) dan baca pesan error-nya                      |
-| `Unable to find image 'multidb-mcp:latest'`           | `--pull=never` dan image belum di-build            | `npm run docker:build`                                                    |
-| `permission denied` saat menulis `.multidb`           | UID user host berbeda dari user `node` (1000) di container | `chown -R 1000:1000 .multidb`, atau tambah `"--user", "UID:GID"` di args (cek `id -u`) |
-| `libxml2.so.2: cannot open shared object` (Db2)       | Memakai Cara B di Ubuntu 26.04                     | Pakai Cara A (Docker)                                                     |
-| Tidak bisa menjangkau database di `127.0.0.1`         | Tidak memakai `--network host`                     | Tambahkan `--network host`                                                |
-| Timeout ke database kantor                            | VPN mati atau firewall                             | Cek dari host: `nc -vz host port`                                         |
-| Nama file audit memakai tanggal yang salah            | Container berjalan dalam UTC                       | Tambahkan `-e TZ=Asia/Jakarta`                                            |
-| Server menolak start: "password" di config            | Password ditulis langsung di `databases.json`      | Ganti dengan `"${NAMA_VAR}"` dan pindahkan nilainya ke `.env.multidb`     |
-| Perubahan `databases.json` tidak berlaku              | Server dibaca saat start                           | Mulai ulang sesi Claude Code                                              |
+| Gejala                                          | Penyebab umum                                              | Perbaikan                                                                              |
+| ----------------------------------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `/mcp` menampilkan **failed**                   | Config salah atau variabel env kosong                      | Jalankan perintah uji (4.4) dan baca pesan error-nya                                   |
+| `Unable to find image 'multidb-mcp:latest'`     | `--pull=never` dan image belum di-build                    | `npm run docker:build`                                                                 |
+| `permission denied` saat menulis `.multidb`     | UID user host berbeda dari user `node` (1000) di container | `chown -R 1000:1000 .multidb`, atau tambah `"--user", "UID:GID"` di args (cek `id -u`) |
+| `libxml2.so.2: cannot open shared object` (Db2) | Memakai Cara B di Ubuntu 26.04                             | Pakai Cara A (Docker)                                                                  |
+| Tidak bisa menjangkau database di `127.0.0.1`   | Tidak memakai `--network host`                             | Tambahkan `--network host`                                                             |
+| Timeout ke database kantor                      | VPN mati atau firewall                                     | Cek dari host: `nc -vz host port`                                                      |
+| Nama file audit memakai tanggal yang salah      | Container berjalan dalam UTC                               | Tambahkan `-e TZ=Asia/Jakarta`                                                         |
+| Server menolak start: "password" di config      | Password ditulis langsung di `databases.json`              | Ganti dengan `"${NAMA_VAR}"` dan pindahkan nilainya ke `.env.multidb`                  |
+| Perubahan `databases.json` tidak berlaku        | Server dibaca saat start                                   | Mulai ulang sesi Claude Code                                                           |

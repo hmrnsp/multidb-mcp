@@ -16,6 +16,10 @@ All notable changes to this project are documented here. The format is based on
 - A test that loads `databases.dev.json` and opens every development connection.
 - `templates/env.multidb.example`, the env file that goes with `templates/databases.example.json`.
 - `npm run check:env` also checks the Redis port.
+- `templates/AGENTS.md.example`: database rules for Claude and other agents (connections, workflow, writes, and
+  what never to do).
+- `templates/mcp.windows.example.json`, a `.mcp.json` for Windows paths.
+- A step-by-step guide in Indonesian, `docs/how-to.id.md`, linked from both READMEs.
 
 ### Removed
 
@@ -30,6 +34,9 @@ All notable changes to this project are documented here. The format is based on
 - The `*_LOCAL_RO_PASSWORD` variables are gone: the read-only `mcp_ro` test user is a fixed fixture that the server never uses.
 - `.env` now holds only passwords: the `*_LOCAL_URL`, `*_LOCAL_RO_URL`, `DB2_LOCAL_CONN`, and `DB2_DEV_CONN` variables are gone.
   The integration tests and scripts build their URLs from those passwords (`scripts/lib/dev-connections.mjs`).
+- `templates/CLAUDE.md.example` now only imports `AGENTS.md` (`@AGENTS.md`), so every agent reads the same rules.
+- `templates/settings.example.json` has a `deny` list: no reading `.env.multidb`, no psql, mysql, mariadb, db2,
+  or redis-cli.
 
 ## [0.9.0] - 2026-11-02
 

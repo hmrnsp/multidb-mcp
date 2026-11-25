@@ -11,7 +11,7 @@ truncated and masked, and every tool call is written to an audit log.
 > The guard is the first layer of defense, not the only one. Always connect with a database user
 > that has only the privileges the connection needs. See [Security model](#security-model).
 
-[Bahasa Indonesia](README.id.md)
+[Bahasa Indonesia](README.id.md) · [Panduan langkah demi langkah (Bahasa Indonesia)](docs/how-to.id.md)
 
 ## Contents
 
@@ -446,13 +446,17 @@ docker run -i --rm --init --pull=never --network host -e TZ=Europe/Berlin \
    `databases.example.json` uses). Run `chmod 600 .env.multidb` and **add it to `.gitignore`** before creating it.
 3. Copy `templates/mcp.example.json` (plain `node`) or `templates/mcp.docker.example.json` (Docker, needed for
    Db2 on newer distributions) to `.mcp.json`. The path to `dist/index.js` must be absolute.
-4. Append `templates/CLAUDE.md.example` to the project's `CLAUDE.md` and merge
-   `templates/settings.example.json` into `.claude/settings.json` (it makes Claude Code ask before
-   `execute_sql` and `redis_command`).
+4. Copy `templates/AGENTS.md.example` to `AGENTS.md` and replace the connection ids with the ones in
+   `databases.json`. Then add the line `@AGENTS.md` to the project's `CLAUDE.md` (see
+   `templates/CLAUDE.md.example`): Claude Code imports it, so Claude and other agents read the same rules.
+   Merge `templates/settings.example.json` into `.claude/settings.json`: it makes Claude Code ask before
+   `execute_sql` and `redis_command`, and its `deny` list blocks reading `.env.multidb` and running psql,
+   mysql, db2, or redis-cli.
 5. Add `.multidb/` (the audit log) to `.gitignore`.
 
 Claude Code permissions apply per tool, not per connection, which is why production protection is
-enforced by the guard and not only by those permissions.
+enforced by the guard and not only by those permissions. The prompt in `AGENTS.md` guides the agent but
+protects nothing: the guard, `access`, a read-only database user, and the `deny` list do.
 
 ## Audit log and reconnecting
 

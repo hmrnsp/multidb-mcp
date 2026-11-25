@@ -3,11 +3,11 @@
     "multidb": {
       "command": "node",
       "args": [
-        "C:\\Users\\NAMA\\multidb-mcp\\dist\\index.js",
+        "C:\\Users\\USER\\multidb-mcp\\dist\\index.js",
         "--config",
-        "C:\\Users\\NAMA\\multidb-mcp\\databases.dev.json",
+        "C:\\Users\\USER\\multidb-mcp\\databases.dev.json",
         "--dotenv",
-        "C:\\Users\\NAMA\\multidb-mcp\\.env"
+        "C:\\Users\\USER\\multidb-mcp\\.env"
       ]
     }
   }
